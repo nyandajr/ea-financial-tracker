@@ -9,6 +9,7 @@ PROJECT_DIR="/home/fred/Downloads/Python_Projects/EA_Financial_Tracker"
 VENV="$PROJECT_DIR/.venv/bin/activate"
 LOG="$PROJECT_DIR/logs/auto_update.log"
 EMAIL="freddynyanda@proton.me"
+SENDER="freddynyanda@gmail.com"
 
 mkdir -p "$PROJECT_DIR/logs"
 
@@ -72,7 +73,7 @@ PYEOF
 # Send email
 {
 echo "To: $EMAIL"
-echo "From: freddynyanda@proton.me"
+echo "From: $SENDER"
 echo "Subject: 📊 EA Financial Tracker — Hourly Update $TIMESTAMP"
 echo "Content-Type: text/plain; charset=UTF-8"
 echo ""
