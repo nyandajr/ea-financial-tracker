@@ -19,9 +19,9 @@ CRYPTO_FILE = os.path.join(DATA_DIR, 'crypto_prices.csv')
 
 # ── Exchange Rates ─────────────────────────────────────────────
 def fetch_exchange_rates():
-    """Fetch USD/EUR → TZS, KES, UGX from Frankfurter API"""
+    """Fetch USD → TZS, KES, UGX, EUR, GBP from ExchangeRate-API (free, no key)"""
     try:
-        url = 'https://api.frankfurter.app/latest?from=USD&to=TZS,KES,UGX,EUR,GBP'
+        url = 'https://open.er-api.com/v6/latest/USD'
         r = requests.get(url, timeout=10)
         data = r.json()
         rates = data.get('rates', {})
