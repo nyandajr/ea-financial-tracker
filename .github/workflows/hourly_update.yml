@@ -1,0 +1,36 @@
+name: Hourly Data Update
+
+on:
+  schedule:
+    - cron: '0 * * * *'  # Every hour
+  workflow_dispatch:  # Manual trigger too
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13'
+
+    - name: Install dependencies
+      run: pip install -r requirements.txt
+
+    - name: Fetch data
+      run: python src/fetch_data.py
+
+    - name: Run predictions
+      run: python src/predict.py
+
+    - name: Commit and push
+      run: |
+        git config user.name "nyandajr"
+        git config user.email "freddynyanda@proton.me"
+        git add data/
+        git diff --cached --quiet || git commit -m "data: Hourly update - $(date '+%Y-%m-%d %H:%M')"
+        git push
