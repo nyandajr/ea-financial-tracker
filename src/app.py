@@ -103,7 +103,7 @@ def plot_predictions(preds_list, current, label, color='#3FB950'):
 with st.sidebar:
     st.markdown("## 📊 EA Financial Tracker")
     st.markdown("---")
-    page = st.radio("Navigate", ["🏠 Dashboard", "💱 Exchange Rates", "🪙 Crypto", "🤖 ML Predictions"])
+    page = st.radio("Navigate", ["🏠 Dashboard", "💱 Exchange Rates", "🪙 Crypto", "🤖 ML Predictions", "📊 GitHub Contributions"])
     st.markdown("---")
     if st.button("🔄 Refresh Data Now"):
         import subprocess, sys
@@ -267,6 +267,127 @@ elif page == "🤖 ML Predictions":
             c4.metric("Trend", d['trend'])
             plot_predictions(d['predictions'], d['current'], col, '#F7931A')
             st.markdown("---")
+
+# ═══════════════════════════════════════════════════════════════
+# PAGE: GITHUB CONTRIBUTIONS
+# ═══════════════════════════════════════════════════════════════
+elif page == "📊 GitHub Contributions":
+    from github_contributions import fetch_github_contributions
+
+    st.markdown("# 📊 GitHub Contributions 2026")
+    st.markdown("View your GitHub contribution activity for the year **2026**.")
+    st.markdown("---")
+
+    col_u, col_t = st.columns(2)
+    with col_u:
+        gh_username = st.text_input(
+            "GitHub Username",
+            value=os.environ.get("GITHUB_USERNAME", "nyandajr"),
+            placeholder="e.g. nyandajr",
+        )
+    with col_t:
+        gh_token = st.text_input(
+            "GitHub Personal Access Token",
+            value=os.environ.get("GITHUB_TOKEN", ""),
+            type="password",
+            placeholder="ghp_...",
+        )
+        st.caption(
+            "Needs `read:user` scope. "
+            "[Create a token →](https://github.com/settings/tokens)"
+        )
+
+    fetch_gh = st.button("📡 Fetch My 2026 Contributions")
+
+    if fetch_gh:
+        if not gh_token:
+            st.warning("⚠️ Please provide a GitHub personal access token.")
+        elif not gh_username:
+            st.warning("⚠️ Please provide a GitHub username.")
+        else:
+            with st.spinner(f"Fetching contributions for **{gh_username}** in 2026 …"):
+                result = fetch_github_contributions(gh_username, 2026, gh_token)
+
+            if "error" in result:
+                st.error(f"❌ {result['error']}")
+            else:
+                coll     = result["contributionsCollection"]
+                calendar = coll["contributionCalendar"]
+                display_name = result.get("name") or gh_username
+
+                # ── Summary metrics ────────────────────────────────
+                st.markdown(f"### 👤 {display_name} (@{result['login']})")
+                m1, m2, m3, m4, m5 = st.columns(5)
+                m1.metric("🟩 Total Contributions", calendar["totalContributions"])
+                m2.metric("💻 Commits",             coll["totalCommitContributions"])
+                m3.metric("🔀 Pull Requests",       coll["totalPullRequestContributions"])
+                m4.metric("🐛 Issues Opened",       coll["totalIssueContributions"])
+                m5.metric("🔍 PR Reviews",          coll["totalPullRequestReviewContributions"])
+
+                if coll["totalRepositoryContributions"]:
+                    st.info(
+                        f"🗂️ Contributed to **{coll['totalRepositoryContributions']}** "
+                        "repositories in 2026"
+                    )
+
+                st.markdown("---")
+                st.markdown("#### 🗓️ Contribution Calendar")
+
+                # ── Build heatmap grid (7 rows × N weeks) ──────────
+                # GitHub weekday: 0 = Sunday … 6 = Saturday
+                day_names  = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+                weeks      = calendar["weeks"]
+                z_grid     = [[] for _ in range(7)]
+                hover_grid = [[] for _ in range(7)]
+                x_labels   = []
+
+                for week in weeks:
+                    days    = week["contributionDays"]
+                    day_map = {d["weekday"]: d for d in days}
+                    x_labels.append(days[0]["date"] if days else "")
+                    for wd in range(7):
+                        if wd in day_map:
+                            count = day_map[wd]["contributionCount"]
+                            date  = day_map[wd]["date"]
+                            z_grid[wd].append(count)
+                            hover_grid[wd].append(f"{date}: {count} contribution{'s' if count != 1 else ''}")
+                        else:
+                            z_grid[wd].append(None)
+                            hover_grid[wd].append("")
+
+                fig_cal = go.Figure(data=go.Heatmap(
+                    z=z_grid,
+                    x=x_labels,
+                    y=day_names,
+                    text=hover_grid,
+                    hovertemplate="%{text}<extra></extra>",
+                    colorscale=[
+                        [0.00, "#161B22"],
+                        [0.01, "#0E4429"],
+                        [0.25, "#006D32"],
+                        [0.55, "#26A641"],
+                        [1.00, "#39D353"],
+                    ],
+                    showscale=False,
+                    xgap=3,
+                    ygap=3,
+                ))
+                fig_cal.update_layout(
+                    title=f"{gh_username} — GitHub Contributions 2026",
+                    height=230,
+                    paper_bgcolor="#161B22",
+                    plot_bgcolor="#0D1117",
+                    font=dict(color="#E6EDF3"),
+                    xaxis=dict(showgrid=False, tickangle=-45),
+                    yaxis=dict(showgrid=False, autorange="reversed"),
+                    margin=dict(l=45, r=10, t=50, b=60),
+                )
+                st.plotly_chart(fig_cal, use_container_width=True)
+    else:
+        st.info(
+            "Enter your GitHub username and a personal access token above, "
+            "then click **📡 Fetch My 2026 Contributions**."
+        )
 
 st.markdown("---")
 st.markdown("<center><small>📊 EA Financial Tracker | Built with Streamlit, scikit-learn & free APIs</small></center>",
