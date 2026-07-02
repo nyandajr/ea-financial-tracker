@@ -2,8 +2,8 @@ name: Data Update
 
 on:
   schedule:
-    - cron: '*/30 * * * *'  # Crypto — every 30 minutes
-    - cron: '0 * * * *'     # FX rates — hourly (source data only refreshes daily; polling faster risks rate limits for no benefit)
+    - cron: '13,43 * * * *'  # Crypto — every 30 minutes, offset from :00/:30 to dodge GitHub's peak-load scheduling window
+    - cron: '17 * * * *'     # FX rates — hourly, offset from :00 (source data only refreshes daily; polling faster risks rate limits for no benefit)
   workflow_dispatch:  # Manual trigger too
 
 jobs:
@@ -23,11 +23,11 @@ jobs:
       run: pip install -r requirements.txt
 
     - name: Fetch crypto prices
-      if: github.event.schedule == '*/30 * * * *' || github.event_name == 'workflow_dispatch'
+      if: github.event.schedule == '13,43 * * * *' || github.event_name == 'workflow_dispatch'
       run: python src/fetch_data.py --crypto
 
     - name: Fetch exchange rates
-      if: github.event.schedule == '0 * * * *' || github.event_name == 'workflow_dispatch'
+      if: github.event.schedule == '17 * * * *' || github.event_name == 'workflow_dispatch'
       run: python src/fetch_data.py --fx
 
     - name: Run predictions
