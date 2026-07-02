@@ -2,7 +2,7 @@ name: Hourly Data Update
 
 on:
   schedule:
-    - cron: '0 * * * *'  # Every hour
+    - cron: '*/30 * * * *'  # Every 30 minutes
   workflow_dispatch:  # Manual trigger too
 
 jobs:
