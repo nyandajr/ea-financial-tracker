@@ -2,10 +2,14 @@
 fetch_data.py
 Fetches exchange rates and crypto prices, saves to CSV in /data
 APIs used:
-  - Frankfurter (free, no key) → TZS/KES/UGX vs USD/EUR
+  - ExchangeRate-API open access (free, no key) → TZS/KES/UGX vs USD/EUR
+    Underlying data refreshes once/24h — polling faster than hourly gains
+    nothing and risks their rate limiter, so this runs on its own hourly
+    schedule separate from the crypto fetch.
   - CoinGecko   (free, no key) → BTC/ETH/USDT prices
 """
 
+import argparse
 import requests
 import pandas as pd
 import os
@@ -83,5 +87,15 @@ def fetch_crypto_prices():
         return None
 
 if __name__ == '__main__':
-    fetch_exchange_rates()
-    fetch_crypto_prices()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--fx', action='store_true', help='Fetch exchange rates only')
+    parser.add_argument('--crypto', action='store_true', help='Fetch crypto prices only')
+    args = parser.parse_args()
+
+    run_fx = args.fx or not (args.fx or args.crypto)
+    run_crypto = args.crypto or not (args.fx or args.crypto)
+
+    if run_fx:
+        fetch_exchange_rates()
+    if run_crypto:
+        fetch_crypto_prices()
