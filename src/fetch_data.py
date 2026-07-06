@@ -43,8 +43,6 @@ def fetch_exchange_rates():
             df = pd.concat([df, df_new], ignore_index=True).drop_duplicates(subset='timestamp')
         else:
             df = df_new
-        # Keep last 30 days of hourly data (~720 rows)
-        df = df.tail(720)
         df.to_csv(FX_FILE, index=False)
         print(f"✅ Exchange rates saved: USD/TZS={row['USD_TZS']}, USD/KES={row['USD_KES']}")
         return row
@@ -78,7 +76,6 @@ def fetch_crypto_prices():
             df = pd.concat([df, df_new], ignore_index=True).drop_duplicates(subset='timestamp')
         else:
             df = df_new
-        df = df.tail(720)
         df.to_csv(CRYPTO_FILE, index=False)
         print(f"✅ Crypto prices saved: BTC=${row['BTC_USD']:,}")
         return row
