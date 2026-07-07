@@ -30,8 +30,11 @@ def sync_with_remote():
 
 
 def git_commit_and_push():
-    run("git", "config", "user.name", "ea-financial-bot")
-    run("git", "config", "user.email", "ea-financial-bot@users.noreply.github.com")
+    # freddynyanda@proton.me is Fred's real, verified GitHub email --
+    # a synthetic bot email here would push real commits that silently
+    # never count toward his contribution graph
+    run("git", "config", "user.name", "nyandajr")
+    run("git", "config", "user.email", "freddynyanda@proton.me")
     run("git", "add", *DATA_FILES, check=False)
 
     diff = run("git", "diff", "--cached", "--quiet", check=False)
