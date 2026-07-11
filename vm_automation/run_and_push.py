@@ -7,12 +7,45 @@ Usage: python run_and_push.py --crypto | --fx
 """
 
 import argparse
+import csv
 import subprocess
 import sys
 from pathlib import Path
 
 REPO_DIR = Path(__file__).resolve().parent.parent
 DATA_FILES = ["data/exchange_rates.csv", "data/crypto_prices.csv", "data/predictions.json"]
+
+
+def _last_row(csv_path):
+    try:
+        with open(REPO_DIR / csv_path, newline="") as f:
+            rows = list(csv.DictReader(f))
+        return rows[-1] if rows else None
+    except FileNotFoundError:
+        return None
+
+
+def build_commit_message(is_crypto):
+    if is_crypto:
+        row = _last_row("data/crypto_prices.csv")
+        if not row:
+            return "data: crypto update"
+        return (
+            "data: crypto update — "
+            f"BTC ${float(row['BTC_USD']):,.0f} | "
+            f"ETH ${float(row['ETH_USD']):,.0f} | "
+            f"BNB ${float(row['BNB_USD']):,.0f}"
+        )
+
+    row = _last_row("data/exchange_rates.csv")
+    if not row:
+        return "data: fx update"
+    return (
+        "data: fx update — "
+        f"USD/TZS {float(row['USD_TZS']):,.2f} | "
+        f"USD/KES {float(row['USD_KES']):,.2f} | "
+        f"USD/UGX {float(row['USD_UGX']):,.2f}"
+    )
 
 
 def run(*args, cwd=REPO_DIR, check=True):
@@ -29,7 +62,7 @@ def sync_with_remote():
     run("git", "reset", "--hard", "origin/main")
 
 
-def git_commit_and_push():
+def git_commit_and_push(is_crypto):
     # freddynyanda@proton.me is Fred's real, verified GitHub email --
     # a synthetic bot email here would push real commits that silently
     # never count toward his contribution graph
@@ -42,9 +75,7 @@ def git_commit_and_push():
         print("[run_and_push] no changes to commit")
         return
 
-    timestamp_proc = subprocess.run(["date", "-u", "+%Y-%m-%d %H:%M"], capture_output=True, text=True)
-    timestamp = timestamp_proc.stdout.strip()
-    run("git", "commit", "-m", f"data: update - {timestamp}")
+    run("git", "commit", "-m", build_commit_message(is_crypto))
     run("git", "push", "--force", "origin", "HEAD:main")
 
 
@@ -66,7 +97,7 @@ def main():
 
     run(sys.executable, "src/predict.py")
 
-    git_commit_and_push()
+    git_commit_and_push(args.crypto)
     print("[run_and_push] done")
 
 
