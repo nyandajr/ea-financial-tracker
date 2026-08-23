@@ -52,15 +52,25 @@ def predict_next_24h(series, label, window=6, test_ratio=0.2):
         if len(values) < window + 5:
             return None, None, None
 
+        # ── Work out the train/test split in raw-value terms first ──
+        n_samples = len(values) - window  # == len(X) once windowed below
+        split     = max(1, int(n_samples * (1 - test_ratio)))
+        raw_split = window + split        # index in `values` where the test portion begins
+
+        # ── Fit the scaler on the TRAINING portion only ─────────
+        # transform() just applies already-learned min/max, so using it on
+        # the test range afterward is correct -- only fit() must never see
+        # test-set values, otherwise the scaler leaks test-set information
+        # into preprocessing.
         scaler = MinMaxScaler()
-        scaled = scaler.fit_transform(values.reshape(-1, 1)).flatten()
+        scaler.fit(values[:raw_split].reshape(-1, 1))
+        scaled = scaler.transform(values.reshape(-1, 1)).flatten()
 
         X, y = make_features(scaled, window)
         if len(X) < 5:
             return None, None, None
 
-        # ── Train / Test split ─────────────────────────────────
-        split  = max(1, int(len(X) * (1 - test_ratio)))
+        # ── Train / Test split (same split point as computed above) ──
         X_train, X_test = X[:split], X[split:]
         y_train, y_test = y[:split], y[split:]
 
