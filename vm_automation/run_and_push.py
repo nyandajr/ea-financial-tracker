@@ -76,7 +76,12 @@ def git_commit_and_push(is_crypto):
         return
 
     run("git", "commit", "-m", build_commit_message(is_crypto))
-    run("git", "push", "--force", "origin", "HEAD:main")
+    # No --force: sync_with_remote() already reset --hard to origin/main,
+    # so this is always a fast-forward. GitHub's contribution graph is
+    # fed by a separate PushEvent pipeline that silently drops commits
+    # behind a force-pushed ref -- confirmed undercounting real commits
+    # portfolio-wide by up to 80%+ before this was fixed.
+    run("git", "push", "origin", "HEAD:main")
 
 
 def main():
