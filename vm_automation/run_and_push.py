@@ -12,8 +12,12 @@ import subprocess
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 REPO_DIR = Path(__file__).resolve().parent.parent
 DATA_FILES = ["data/exchange_rates.csv", "data/crypto_prices.csv", "data/predictions.json"]
+
+load_dotenv(REPO_DIR / ".env")  # populates COINGECKO_API_KEY for fetch_data.py's subprocess
 
 
 def _last_row(csv_path):

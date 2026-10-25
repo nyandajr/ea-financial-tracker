@@ -52,14 +52,26 @@ def fetch_exchange_rates():
 
 # ── Crypto Prices ──────────────────────────────────────────────
 def fetch_crypto_prices():
-    """Fetch BTC, ETH, USDT prices in USD from CoinGecko"""
+    """Fetch BTC, ETH, USDT prices in USD from CoinGecko.
+
+    Uses a free Demo API key (COINGECKO_API_KEY) when set -- CoinGecko's
+    CDN firewall challenges datacenter IPs hitting the keyless endpoint
+    repeatedly (confirmed on this same VM's IP for global-crypto-sentiment:
+    864 logged 403s before authenticating fixed it). This fetch only runs
+    twice an hour so it wasn't failing often, but the risk was the same.
+    Falls back to keyless if no key is set.
+    """
     try:
         url = 'https://api.coingecko.com/api/v3/simple/price'
         params = {
             'ids': 'bitcoin,ethereum,tether,binancecoin',
             'vs_currencies': 'usd,kes',
         }
-        r = requests.get(url, params=params, timeout=10)
+        headers = {}
+        key = os.environ.get('COINGECKO_API_KEY')
+        if key:
+            headers['x-cg-demo-api-key'] = key
+        r = requests.get(url, params=params, headers=headers, timeout=10)
         data = r.json()
         row = {
             'timestamp':    datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
